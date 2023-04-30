@@ -1,4 +1,4 @@
-# rusty_md
+# Project RuBi
 A simple MD computation with rust
 
 
