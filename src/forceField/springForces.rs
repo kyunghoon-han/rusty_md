@@ -17,7 +17,7 @@ pub fn LJ_force(atom1: &Atom, atom2: &Atom) -> [f64; 3] {
     let sigma: f64   = 1.0;
     let r: f64 = Euclidean_distance(atom1, atom2);
 
-    let force_magnitude: f64 = 24.0 * epsilon * (2.0 * sigma.powi(12) / r.powi(13) - sigma.powi(6) / r.powi(7));
+    let force_magnitude: f64 = 24.0 * epsilon * (2.0 * sigma.powi(12) / r.powi(11) - sigma.powi(6) / r.powi(5));
 
     let mut force: [f64; 3] = [0.0; 3];
     for i in 0..3 {
