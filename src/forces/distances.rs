@@ -1,7 +1,10 @@
+#![allow(unused)]
 use crate::{Atom, Molecule};
+extern crate ndarray;
+use ndarray::{Array2, ArrayView2};
 
 // Euclidean distance between two atoms
-fn euclidean_distance(atom1: &Atom, atom2: &Atom) -> f64 {
+pub fn euclidean_distance(atom1: &Atom<String>, atom2: &Atom<String>) -> f64 {
     let mut distance: f64 = 0.0;
     for i in 0..3 {
         distance += (atom1.position[i] - atom2.position[i]).powi(2);
@@ -10,7 +13,7 @@ fn euclidean_distance(atom1: &Atom, atom2: &Atom) -> f64 {
 }
 
 pub fn calculate_distance(molecule: &Molecule, atom_index: usize) -> Vec<f64> {
-    let atom1: &Atom = match molecule.get_atom(atom_index) {
+    let atom1: &Atom<String> = match molecule.get_atom(atom_index) {
         Some(atom1) => atom1,
         None => panic!("Invalid atom index"),
     };
@@ -26,7 +29,7 @@ pub fn calculate_distance(molecule: &Molecule, atom_index: usize) -> Vec<f64> {
 }
 
 pub fn calculate_direction(molecule: &Molecule, atom_index: usize) -> Vec<[f64; 3]> {
-    let atom: &Atom = match molecule.get_atom(atom_index) {
+    let atom: &Atom<String> = match molecule.get_atom(atom_index) {
         Some(atom) => atom,
         None => panic!("Invalid atom index"),
     };
@@ -41,7 +44,7 @@ pub fn calculate_direction(molecule: &Molecule, atom_index: usize) -> Vec<[f64; 
     directions
 }
 
-fn calculate_direction_between_atoms(atom1: &Atom, atom2: &Atom) -> [f64; 3] {
+fn calculate_direction_between_atoms(atom1: &Atom<String>, atom2: &Atom<String>) -> [f64; 3] {
     // get the distance between two atoms
     let distance: f64 = euclidean_distance(atom1, atom2);
 
@@ -52,8 +55,24 @@ fn calculate_direction_between_atoms(atom1: &Atom, atom2: &Atom) -> [f64; 3] {
     let dy: f64 = position2[1] - position1[1];
     let dz: f64 = position2[2] - position1[2];
 
+    /* //For debugging
+    println!("Atom 1: {:}", atom1.name);
+    println!("Atom 2: {:}", atom2.name);
+    println!("dx : {:}", dx);
+    println!("dy : {:}", dy);
+    println!("dz : {:}", dz);
+    */
+
     let inv_distance = 1.0 / distance;
 
     // output the vector
     [dx * inv_distance, dy * inv_distance, dz * inv_distance]
 }
+
+pub fn vec_to_array2(vec: Vec<[f64; 3]>) -> Array2<f64> {
+    let shape = (vec.len(), 3);
+    let flattened = vec.into_iter().flatten().collect::<Vec<f64>>();
+    let array_view: ArrayView2<f64> = ArrayView2::from_shape(shape, &flattened).unwrap();
+    array_view.to_owned()
+}
+
