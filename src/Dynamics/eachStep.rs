@@ -64,6 +64,11 @@ pub fn iteration (
     molecule_copy.coordinates += &pos_increment;
     molecule_copy.velocities += &vel_increment;
 
+    // work done by the force
+    let forces_tmp = molecule_copy.forces.clone();
+    let work_done = (forces_tmp * pos_increment).sum();
+    molecule_copy.energy = work_done + kinetic_energy(molecule_copy); // + &molecule_copy.energy;
+
     // update the values for each atom
     let molecule_copy_copy: Molecule = molecule_copy.clone();
     let num_atoms = molecule_copy.num_atoms;
@@ -75,6 +80,14 @@ pub fn iteration (
         }
     }
     molecule_copy
+}
+
+fn kinetic_energy(molecule: &mut Molecule) -> f64{
+    let vel_1 = molecule.velocities.clone();
+    let vel_2 = molecule.velocities.clone();
+    let kinetic_energy = (halfer_matrix(molecule.num_atoms, 3) * vel_1 * vel_2 / molecule.mass_n_by_3()).sum();
+
+    kinetic_energy
 }
 
 fn halfer_matrix(rows: usize, cols: usize) -> Array2<f64> {

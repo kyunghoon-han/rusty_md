@@ -20,7 +20,7 @@ pub fn water() -> Molecule {
             8.0,
             "H".to_owned(),
         ),
-    ], 300.0, 0.01);
+    ], 300.0, 0.1);
 
     molecule
 }

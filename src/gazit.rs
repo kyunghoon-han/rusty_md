@@ -351,7 +351,7 @@ pub fn gazit() -> Molecule {
         12.011,
         "C".to_owned(),
     ),
-    ], 200.0, 0.01);
+    ], 100.0, 0.1);
     
     molecule
 }

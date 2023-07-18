@@ -70,8 +70,9 @@ pub struct Molecule {
     pub torsion_current: Vec<(usize, usize, usize, usize, f64)>, // current torsion angle
     pub forces: Array2<f64>,                                  // stores the force
     // Langevin dynamics parameters
-    pub temperature: f64,      // system temperature
-    pub damping_coefficient: f64,  // damping coefficient
+    pub temperature: f64,                                     // system temperature
+    pub damping_coefficient: f64,                             // damping coefficient
+    pub energy: f64,                                          // energy of the system
 }
 
 impl Molecule {
@@ -111,8 +112,9 @@ impl Molecule {
         let equilibrium_valence: Vec<(usize, usize, usize, f64)> = Vec::new();
         let valence_current: Vec<(usize, usize, usize, f64)> = Vec::new();
         let torsion_current: Vec<(usize, usize, usize, usize, f64)> = Vec::new();
-        // initialize the system with zero forces at first
+        // initialize the system with zero forces and energy at first
         let forces = Array2::<f64>::zeros((num_atoms, 3));
+        let energy = 0.0;
 
         // Langevin dynamics stuff
         //let temperature = 300.0;
@@ -132,7 +134,8 @@ impl Molecule {
             torsion_current,
             forces,
             temperature,
-            damping_coefficient
+            damping_coefficient,
+            energy
         };
         molecule.compute_connectivities();
         molecule.initialize_angles();
