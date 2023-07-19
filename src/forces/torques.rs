@@ -34,12 +34,12 @@ pub fn compute_torques(molecule: &mut Molecule) -> &mut Molecule {
                 r_ij[1] * force_ij[2] - r_ij[2] * force_ij[1],
                 r_ij[2] * force_ij[0] - r_ij[0] * force_ij[2],
                 r_ij[0] * force_ij[1] - r_ij[1] * force_ij[0]
-            ] / r_ij_norm;
+            ] / (r_ij_norm + 1e-13);
             let torque_kl = array![
                 r_kl[1] * force_kl[2] - r_kl[2] * force_kl[1],
                 r_kl[2] * force_kl[0] - r_kl[0] * force_kl[2],
                 r_kl[0] * force_kl[1] - r_kl[1] * force_kl[0]
-            ] / r_kl_norm;
+            ] / (r_kl_norm + 1e-13);
             let torque_kl_copy = torque_kl.clone();
 
             let row_j = torques.row_mut(j).to_owned();

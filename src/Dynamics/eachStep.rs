@@ -94,12 +94,12 @@ fn halfer_matrix(rows: usize, cols: usize) -> Array2<f64> {
     Array::from_elem((rows, cols), 0.5)
 }
 
-fn add_langevin (molecule: &mut Molecule, time_step: f64) -> &mut Molecule {
+pub fn add_langevin (molecule: &mut Molecule, time_step: f64) -> &mut Molecule {
     molecule.apply_langevin_forces(time_step);
     molecule
 }
 
-fn add_harmonics (molecule: &mut Molecule) -> &mut Molecule {
+pub fn add_harmonics (molecule: &mut Molecule) -> &mut Molecule {
     // import the existing Harmonic forces
     #[path="../forces/harmonic.rs"] mod harmonic;
     pub use harmonic::harmonic_force;
@@ -109,7 +109,7 @@ fn add_harmonics (molecule: &mut Molecule) -> &mut Molecule {
     return_molecule
 }
 
-fn add_lennard_jones (molecule: &mut Molecule) -> &mut Molecule {
+pub fn add_lennard_jones (molecule: &mut Molecule) -> &mut Molecule {
     // import the Lennard-Jones force
     #[path="../forces/LennardJones.rs"] mod lj;
     pub use lj::lj_force;
@@ -118,7 +118,7 @@ fn add_lennard_jones (molecule: &mut Molecule) -> &mut Molecule {
     return_molecule
 }
 
-fn add_valence_angle_forces (molecule: &mut Molecule) -> &mut Molecule {
+pub fn add_valence_angle_forces (molecule: &mut Molecule) -> &mut Molecule {
     // import the force due to the valence angles
     #[path="../forces/valence.rs"] mod valence;
     pub use valence::valence_angle_force;
@@ -128,7 +128,7 @@ fn add_valence_angle_forces (molecule: &mut Molecule) -> &mut Molecule {
     return_molecule
 }
 
-fn add_torsion_angle_forces (molecule: &mut Molecule) -> &mut Molecule{
+pub fn add_torsion_angle_forces (molecule: &mut Molecule) -> &mut Molecule{
     // import the force due to the torsion angles
     #[path="../forces/torsional.rs"] mod torsional;
     pub use torsional::torsional_forces;
@@ -138,7 +138,7 @@ fn add_torsion_angle_forces (molecule: &mut Molecule) -> &mut Molecule{
     return_molecule
 }
 
-fn add_torques (molecule: &mut Molecule) -> &mut Molecule{
+pub fn add_torques (molecule: &mut Molecule) -> &mut Molecule{
     // import the torque function
     #[path="../forces/torques.rs"] mod torques;
     pub use torques::compute_torques;

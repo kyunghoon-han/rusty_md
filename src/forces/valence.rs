@@ -25,7 +25,7 @@ fn calculate_angle_force(
     // The force components
     let f = -2.0 * force_constant * theta_diff * sin_theta / (r_ij_norm * r_jk_norm);
     let force_ij = f * r_ij / r_ij_norm;
-    let force_jk = f * r_jk / r_jk_norm;
+    let force_jk = f* r_jk / r_jk_norm;
     let force_jk2 = force_jk.clone();
     // final force output
     let mut forces = Array2::zeros(coordinates.dim());

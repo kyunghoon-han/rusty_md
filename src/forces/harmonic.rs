@@ -24,12 +24,12 @@ pub fn harmonic_force(molecule: &mut Molecule) -> &mut Molecule {
             let connection_dist = molecule.connection_lengths[i][*j];
             let harmonic_force: f64 = harmonic_atoms(distance, connection_dist);
             let direction: [f64; 3] = directions[*j];
-
             for k in 0..3 {
                 forces[i][k] += harmonic_force * direction[k];
             }
         }
     }
+
 
     molecule.forces += &vec_to_array2(forces);
     molecule
@@ -45,6 +45,5 @@ fn harmonic_atoms(distance: f64, equilibrium_dist:f64) -> f64 {
     } else {
         spring_constant = 0.0;
     }*/
-
     2.0 * spring_constant * (distance - equilibrium_dist)
 }

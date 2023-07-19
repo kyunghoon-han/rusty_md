@@ -22,11 +22,14 @@ pub fn lj_force(molecule: &mut Molecule) -> &mut Molecule {
         for (j, _) in molecule.atoms.iter().enumerate() {
             if i != j {
                 let distance: f64 = distances[j];
+                if distance < 1e-3 {
+                    continue;   // out of the loop if the distance is too small
+                }
                 let lennard_jones_force: f64 = lj_atoms(distance);
                 let direction: [f64; 3] = directions[j];
 
                 for k in 0..3 {
-                    forces[i][k] += lennard_jones_force * direction[k];
+                    forces[i][k] -= lennard_jones_force * direction[k];
                 }
             }
         }
@@ -38,12 +41,21 @@ pub fn lj_force(molecule: &mut Molecule) -> &mut Molecule {
 }
 
 fn lj_atoms(distance: f64) -> f64 {
-    let epsilon: f64       = 1.0;  // strength of the potential
-    let sigma: f64         = 1.0;  // distance at which the potential is zero
+    /* TODO!: The epsilon needs to be defined through physics */
+    let epsilon: f64        = 0.001;  // strength of the potential
+    let sigma  : f64        = 1.0;    // distance at which the potential is zero
+    let zero_preventer: f64 = 1e-11;  // to prevent division by zero
 
-    let r_by_sigma: f64    = sigma / distance;
-    let r_by_sigma_6: f64  = r_by_sigma.powi(5);
-    let r_by_sigma_12: f64 = r_by_sigma_6.powi(2);
+    // Choose a suitable cutoff distance
+    let cutoff_distance: f64 = 1.2 * sigma; 
 
-    24.0 * epsilon * (2.0 * r_by_sigma_12 - r_by_sigma_6) / distance
+    if distance >= cutoff_distance {
+        return 0.0; // return zero if the atoms are too distant a part
+    } else {
+        let r_by_sigma: f64    = sigma / (distance + zero_preventer);
+        let r_by_sigma_6: f64  = r_by_sigma.powi(6);
+        let r_by_sigma_12: f64 = r_by_sigma_6.powi(2);
+
+        return 24.0 * epsilon * (2.0 * r_by_sigma_12 - r_by_sigma_6) / (distance + zero_preventer);
+    }
 }
