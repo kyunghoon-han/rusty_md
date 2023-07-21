@@ -29,7 +29,7 @@ pub fn lj_force(molecule: &mut Molecule) -> &mut Molecule {
                 let direction: [f64; 3] = directions[j];
 
                 for k in 0..3 {
-                    forces[i][k] += lennard_jones_force * direction[k];
+                    forces[i][k] -= lennard_jones_force * direction[k];
                 }
             }
         }
