@@ -45,5 +45,5 @@ fn harmonic_atoms(distance: f64, equilibrium_dist:f64) -> f64 {
     } else {
         spring_constant = 0.0;
     }*/
-    2.0 * spring_constant * (distance - equilibrium_dist)
+    6.0 * spring_constant * (distance - equilibrium_dist)
 }

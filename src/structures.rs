@@ -32,7 +32,7 @@ fn diagonal_to_vectors(diagonal_matrix: &Array2<f64>) -> Array2<f64> {
 /*
     Atom structure
 */
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Atom<String> {
     pub position: [f64; 3],
     pub velocity: [f64; 3],
@@ -55,7 +55,7 @@ impl Atom<String> {
 }
 
 // Define a struct to represent a molecule
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Molecule {
     pub atoms: Vec<Atom<String>>,                             // list of Atom structs
     pub coordinates: Array2<f64>,                             // atomic coordinates
@@ -167,11 +167,11 @@ impl Molecule {
 
         for i in 0..num_atoms {
             for j in 0..num_atoms {
-                let epsilon: f64 = 0.01; // some error to be not too strict...
+                let epsilon: f64 = 0.1; // some error to be not too strict...
                 let threshold: f64 = bond_length_table(&self.atoms[i], &self.atoms[j]);
                 let distance_val: f64 = euclidean_distance(&self.atoms[i], &self.atoms[j]);
                 if distance_val < threshold + epsilon && i!=j {
-                    self.connection_lengths[i].push(distance_val);
+                    self.connection_lengths[i].push(threshold);
                     self.connectivities[i].push(j);
                 } else {
                     // zeros will tell us that the connection is not valid
@@ -200,7 +200,7 @@ impl Molecule {
 
         let dot_product = vec1.dot(&vec2);
 
-        let cos_theta: f64 = dot_product / (norm1 * norm2);
+        let cos_theta: f64 = dot_product / (norm1 * norm2 + 1e-10);
         let valence_angle: f64 = cos_theta.acos();
 
         self.valence_current
@@ -234,9 +234,9 @@ impl Molecule {
         let vec3 = pos_4.to_owned() - pos_3.to_owned();
         let vec3_copy = vec3.clone();
         // turn these into normal vectors
-        let normal_1 = vec1 / vec1_copy.dot(&vec1_copy).sqrt();
-        let normal_2 = vec2 / vec2_copy.dot(&vec2_copy).sqrt();
-        let normal_3 = vec3 / vec3_copy.dot(&vec3_copy).sqrt();
+        let normal_1 = vec1 / (vec1_copy.dot(&vec1_copy).sqrt() + 1e-10);
+        let normal_2 = vec2 / (vec2_copy.dot(&vec2_copy).sqrt() + 1e-10);
+        let normal_3 = vec3 / (vec3_copy.dot(&vec3_copy).sqrt() + 1e-10);
         // then the cross products
         let cross_1 = array![
             normal_1[1] * normal_2[2] - normal_1[2] * normal_2[1],

@@ -18,9 +18,9 @@ pub fn torsional_forces(molecule: &mut Molecule) -> &mut Molecule{
         let rkj2 = rkj.clone();
         let rkl  = &rl - &rk;
         let rkl2 = rkl.clone();
-        let normal_rji = rji / rji2.dot(&rji2).sqrt();
-        let normal_rkj = rkj / rkj2.dot(&rkj2).sqrt();
-        let normal_rkl = rkl / rkl2.dot(&rkl2).sqrt();
+        let normal_rji = rji / (rji2.dot(&rji2).sqrt() + 1e-10);
+        let normal_rkj = rkj / (rkj2.dot(&rkj2).sqrt() + 1e-10);
+        let normal_rkl = rkl / (rkl2.dot(&rkl2).sqrt() + 1e-10);
         let n1 = array![
             normal_rji[1] * normal_rkj[2] - normal_rji[2] * normal_rkj[1],
             normal_rji[2] * normal_rkj[0] - normal_rji[0] * normal_rkj[2],
@@ -33,8 +33,8 @@ pub fn torsional_forces(molecule: &mut Molecule) -> &mut Molecule{
             normal_rkj[0] * normal_rkl[1] - normal_rkj[1] * normal_rkl[0]
         ];
         let n2_2 = n2.clone();
-        let m1 = n1 / n1_2.dot(&n1_2).sqrt();
-        let m2 = n2 / n2_2.dot(&n2_2).sqrt();
+        let m1 = n1 / (n1_2.dot(&n1_2).sqrt() + 1e-10);
+        let m2 = n2 / (n2_2.dot(&n2_2).sqrt() + 1e-10);
         let dot_product = m1.dot(&m2);
         let torsion_angle = dot_product.acos();
 
@@ -68,9 +68,9 @@ pub fn torsional_forces(molecule: &mut Molecule) -> &mut Molecule{
         let rkj3 = rkj.clone();
         let rkj4 = rkj.clone();
 
-        let normal_rji = rji / rji2.dot(&rji2).sqrt();
-        let normal_rkj = rkj / rkj2.dot(&rkj2).sqrt();
-        let normal_rkl = rkl / rkl2.dot(&rkl2).sqrt();
+        let normal_rji = rji / (rji2.dot(&rji2).sqrt() + 1e-10);
+        let normal_rkj = rkj / (rkj2.dot(&rkj2).sqrt() + 1e-10);
+        let normal_rkl = rkl / (rkl2.dot(&rkl2).sqrt() + 1e-10);
 
         let n1 = array![
             normal_rji[1] * normal_rkl[2] - normal_rji[2] * normal_rkl[1],
@@ -85,15 +85,15 @@ pub fn torsional_forces(molecule: &mut Molecule) -> &mut Molecule{
         ];
         let n2_2 = n2.clone();
 
-        let m1 = n1 / n1_2.dot(&n1_2).sqrt();
-        let m2 = n2 / n2_2.dot(&n2_2).sqrt();
+        let m1 = n1 / (n1_2.dot(&n1_2).sqrt() + 1e-10);
+        let m2 = n2 / (n2_2.dot(&n2_2).sqrt() + 1e-10);
 
         let cross_product = array![
             m1[1] * m2[2] - m1[2] * m2[1],
             m1[2] * m2[0] - m1[0] * m2[2],
             m1[0] * m2[1] - m1[1] * m2[0]
         ];
-        let gradient = (cross_product * torsional_force_constant).dot(&rkj3) / (rkj4.dot(&rkj4));
+        let gradient = (cross_product * torsional_force_constant).dot(&rkj3) / (rkj4.dot(&rkj4) + 1e-10);
 
         // Apply the torsional forces to the atoms
         /* 
