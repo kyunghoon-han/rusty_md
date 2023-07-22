@@ -42,12 +42,12 @@ pub fn lj_force(molecule: &mut Molecule) -> &mut Molecule {
 
 fn lj_atoms(distance: f64) -> f64 {
     /* TODO!: The epsilon needs to be defined through physics */
-    let epsilon: f64        = 0.001;  // strength of the potential
+    let epsilon: f64        = 0.1;  // strength of the potential
     let sigma  : f64        = 1.0;    // distance at which the potential is zero
-    let zero_preventer: f64 = 1e-13;  // to prevent division by zero
+    let zero_preventer: f64 = 1e-10;  // to prevent division by zero
 
     // Choose a suitable cutoff distance
-    let cutoff_distance: f64 = 2.5 * sigma; 
+    let cutoff_distance: f64 = 4.0 * sigma; 
 
     if distance >= cutoff_distance {
         return 0.0; // return zero if the atoms are too distant a part

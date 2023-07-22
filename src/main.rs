@@ -11,7 +11,7 @@ pub use crate::save_xyz::*;
 #[path = "./bondLengths.rs"] mod bond_lengths;
 // Gazit's molecule
 #[path="./gazit.rs"] mod gazit;
-pub use crate::gazit::gazit;
+pub use crate::gazit::{gazit, gazit_unitcell};
 // CO2 molecule
 #[path="co2.rs"] mod co2;
 pub use crate::co2::{co2_orig, co2_off};
@@ -27,8 +27,8 @@ pub use crate::SD::steepest_descent_minimization;
 
 fn main() {
     
-    let mut gazit_no_min: &mut Molecule = &mut gazit();
-    let mut gazit_min: &mut Molecule = &mut gazit();
+    let mut gazit_no_min: &mut Molecule = &mut gazit_unitcell();
+    let mut gazit_min: &mut Molecule = &mut gazit_unitcell();
 
     //let mut co2_orig_min: &mut Molecule = &mut co2_orig();
     //let mut co2_orig_no_min: &mut Molecule = &mut co2_orig();
@@ -129,21 +129,21 @@ fn main() {
     */
     // minimize the molecule
     println!("Minimizing the Gazit's molecule structure");
-    let minimization_iters: usize = 100;
-    let learning_rate: f64        = 0.000001;
+    let minimization_iters: usize = 1000;
+    let learning_rate: f64        = 0.000000001;
     let threshold_energy: f64     = 0.03;
     let mut gazit_min = steepest_descent_minimization(
         &mut gazit_min, minimization_iters, 
         learning_rate, threshold_energy, list_forces.clone(),
         "gazit_minimization_energies.txt".to_owned());
     // Set simulation parameters
-    let num_steps: usize = 100;
+    let num_steps: usize = 1000;
     let time_step: f64 = 0.0001;
     let filename = "gazit_100K_damp_1e-3_dt_1e-4_with_min.xyz".to_owned();
     println!("Running the dynamics on the Gazit's molecule...");
     run_iterations(num_steps, time_step, &mut gazit_min, list_forces.clone(), filename);
     // Now run the same thing without the minimization
-    let num_steps: usize = 100;
+    let num_steps: usize = 1000;
     let time_step: f64 = 0.0001;
     let filename = "gazit_100K_damp_1e-3_dt_1e-4_without_min.xyz".to_owned();
     println!("Running the dynamics on the Gazit's molecule...");
