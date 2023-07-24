@@ -27,18 +27,18 @@ pub use crate::SD::steepest_descent_minimization;
 
 fn main() {
     
-    let mut gazit_no_min: &mut Molecule = &mut gazit_unitcell();
-    let mut gazit_min: &mut Molecule = &mut gazit_unitcell();
+    //let mut gazit_no_min: &mut Molecule = &mut gazit_unitcell();
+    //let mut gazit_min: &mut Molecule = &mut gazit_unitcell();
 
-    //let mut co2_orig_min: &mut Molecule = &mut co2_orig();
-    //let mut co2_orig_no_min: &mut Molecule = &mut co2_orig();
-    //let mut co2_off_min: &mut Molecule = &mut co2_off();
-    //let mut co2_off_no_min: &mut Molecule = &mut co2_off();
+    let mut co2_orig_min: &mut Molecule = &mut co2_orig();
+    let mut co2_orig_no_min: &mut Molecule = &mut co2_orig();
+    let mut co2_off_min: &mut Molecule = &mut co2_off();
+    let mut co2_off_no_min: &mut Molecule = &mut co2_off();
 
-    //let mut h20_orig_min: &mut Molecule = &mut water_orig();
-    //let mut h20_orig_no_min: &mut Molecule = &mut water_orig();
-    //let mut h20_off_min: &mut Molecule = &mut water_off();
-    //let mut h20_off_no_min: &mut Molecule = &mut water_off();
+    let mut h20_orig_min: &mut Molecule = &mut water_orig();
+    let mut h20_orig_no_min: &mut Molecule = &mut water_orig();
+    let mut h20_off_min: &mut Molecule = &mut water_off();
+    let mut h20_off_no_min: &mut Molecule = &mut water_off();
     // list of forces to consider
     let mut list_forces: Vec<String> =Vec::new();
     list_forces.push("LANGEVIN".to_owned());
@@ -52,7 +52,6 @@ fn main() {
         Run the MD on H2O
     */
     // minimize the molecule
-    /*
     println!("Minimizing the water molecule structures");
     
     let minimization_iters: usize = 100;
@@ -84,8 +83,7 @@ fn main() {
     run_iterations(num_steps, time_step, &mut h20_orig_no_min, list_forces.clone(), filename);
     let filename = "water_300K_damp_1e-3_dt_1e-4_without_min_off.xyz".to_owned();
     println!("Running the dynamics on H2O with weird ICs...");
-    run_iterations(num_steps, time_step, &mut h20_off_no_min, list_forces, filename);
-    
+    run_iterations(num_steps, time_step, &mut h20_off_no_min, list_forces.clone(), filename);
     /*
         Run the MD on CO2
     */
@@ -98,35 +96,35 @@ fn main() {
     let mut co2_orig_min = steepest_descent_minimization(
         co2_orig_min, minimization_iters, 
         learning_rate, threshold_energy, list_forces.clone(),
-        "co2_minimization_energies_no_torque.txt".to_owned());
+        "co2_minimization_energies.txt".to_owned());
     let mut co2_off_min = steepest_descent_minimization(
         co2_off_min, minimization_iters, 
         learning_rate, threshold_energy, list_forces.clone(),
-        "co2_minimization_energies_no_torque.txt".to_owned());
+        "co2_minimization_energies.txt".to_owned());
     // Now to MD
     let num_steps: usize = 100000;
-    let time_step: f64 = 0.001;
-    let filename = "CO2_300K_damp_1e-3_dt_1e-2_with_min_orig_no_torque.xyz".to_owned();
+    let time_step: f64 = 0.0001;
+    let filename = "CO2_300K_damp_1e-3_dt_1e-2_with_min_orig.xyz".to_owned();
     println!("Running the dynamics on CO2...");
     run_iterations(num_steps, time_step, &mut co2_orig_min, list_forces.clone(), filename);
-    let filename = "CO2_300K_damp_1e-3_dt_1e-2_with_min_off_no_torque.xyz".to_owned();
+    let filename = "CO2_300K_damp_1e-3_dt_1e-2_with_min_off.xyz".to_owned();
     println!("Running the dynamics on CO2 with weird ICs");
     run_iterations(num_steps, time_step, &mut co2_off_min, list_forces.clone(), filename);
 
     // now skip the minimization
     let num_steps: usize = 100000;
-    let time_step: f64 = 0.001;
-    let filename = "co2_300K_damp_1e-3_dt_1e-2_without_min_orig_no_torque.xyz".to_owned();
+    let time_step: f64 = 0.0001;
+    let filename = "co2_300K_damp_1e-3_dt_1e-2_without_min_orig.xyz".to_owned();
     println!("Running the dynamics on CO2...");
     run_iterations(num_steps, time_step, &mut co2_orig_no_min, list_forces.clone(), filename);
-    let filename = "co2_300K_damp_1e-3_dt_1e-2_without_min_off_no_torque.xyz".to_owned();
+    let filename = "co2_300K_damp_1e-3_dt_1e-2_without_min_off.xyz".to_owned();
     println!("Running the dynamics on CO2 with weird ICs...");
     run_iterations(num_steps, time_step, &mut co2_off_no_min, list_forces.clone(), filename);
-    */
 
     /*
         Run the MD on the Gazit's molecule
     */
+    /*
     // minimize the molecule
     println!("Minimizing the Gazit's molecule structure");
     let minimization_iters: usize = 1000;
@@ -148,4 +146,5 @@ fn main() {
     let filename = "gazit_100K_damp_1e-3_dt_1e-4_without_min.xyz".to_owned();
     println!("Running the dynamics on the Gazit's molecule...");
     run_iterations(num_steps, time_step, &mut gazit_no_min, list_forces.clone(), filename);
+    */
 }
