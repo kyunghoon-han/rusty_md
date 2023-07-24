@@ -15,9 +15,12 @@ Cargo.lock
 
 
 # Added by cargo
-
 /target
 
-# XYZ coordinate files
+# XYZ coordinate files and some other data
 *.xyz
 *.txt
+
+# DS_Store
+.DS_Store
+.DS_Store/*
