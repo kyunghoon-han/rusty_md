@@ -104,7 +104,7 @@ pub fn add_harmonics (molecule: &mut Molecule) -> &mut Molecule {
     #[path="../forces/harmonic.rs"] mod harmonic;
     pub use harmonic::harmonic_force;
     // return the Harmonic forces
-    let return_molecule = harmonic_force(molecule);
+    let return_molecule = harmonic_force(molecule, 0.01);
     
     return_molecule
 }
@@ -123,7 +123,7 @@ pub fn add_valence_angle_forces (molecule: &mut Molecule) -> &mut Molecule {
     #[path="../forces/valence.rs"] mod valence;
     pub use valence::valence_angle_force;
 
-    let return_molecule: &mut Molecule = valence_angle_force(molecule, 0.01);
+    let return_molecule: &mut Molecule = valence_angle_force(molecule, 0.1);
 
     return_molecule
 }
@@ -133,7 +133,7 @@ pub fn add_torsion_angle_forces (molecule: &mut Molecule) -> &mut Molecule{
     #[path="../forces/torsional.rs"] mod torsional;
     pub use torsional::torsional_forces;
 
-    let return_molecule = torsional_forces(molecule);
+    let return_molecule = torsional_forces(molecule, 0.1);
 
     return_molecule
 }

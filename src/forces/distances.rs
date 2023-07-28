@@ -55,14 +55,6 @@ fn calculate_direction_between_atoms(atom1: &Atom<String>, atom2: &Atom<String>)
     let dy: f64 = position2[1] - position1[1];
     let dz: f64 = position2[2] - position1[2];
 
-    /* //For debugging
-    println!("Atom 1: {:}", atom1.name);
-    println!("Atom 2: {:}", atom2.name);
-    println!("dx : {:}", dx);
-    println!("dy : {:}", dy);
-    println!("dz : {:}", dz);
-    */
-
     let inv_distance = 1.0 / distance;
 
     // output the vector
@@ -75,4 +67,3 @@ pub fn vec_to_array2(vec: Vec<[f64; 3]>) -> Array2<f64> {
     let array_view: ArrayView2<f64> = ArrayView2::from_shape(shape, &flattened).unwrap();
     array_view.to_owned()
 }
-

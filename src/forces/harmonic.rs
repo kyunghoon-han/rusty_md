@@ -10,7 +10,7 @@ pub fn vec_to_array2(vec: Vec<[f64; 3]>) -> Array2<f64> {
     array_view.to_owned()
 }
 
-pub fn harmonic_force(molecule: &mut Molecule) -> &mut Molecule {
+pub fn harmonic_force(molecule: &mut Molecule, force_constant: f64) -> &mut Molecule {
     let num_atoms: usize = molecule.atoms.len();
     let mut forces: Vec<[f64; 3]> = vec![[0.0; 3]; num_atoms];
 
@@ -22,7 +22,7 @@ pub fn harmonic_force(molecule: &mut Molecule) -> &mut Molecule {
         for j in connections_to_i {
             let distance: f64 = distances[*j];
             let connection_dist = molecule.connection_lengths[i][*j];
-            let harmonic_force: f64 = harmonic_atoms(distance, connection_dist);
+            let harmonic_force: f64 = harmonic_atoms(distance, connection_dist) * force_constant;
             let direction: [f64; 3] = directions[*j];
             for k in 0..3 {
                 forces[i][k] += harmonic_force * direction[k];
@@ -45,5 +45,5 @@ fn harmonic_atoms(distance: f64, equilibrium_dist:f64) -> f64 {
     } else {
         spring_constant = 0.0;
     }*/
-    6.0 * spring_constant * (distance - equilibrium_dist)
+    -2.0 * spring_constant * (distance - equilibrium_dist)
 }

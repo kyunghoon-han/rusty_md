@@ -2,7 +2,7 @@ use ndarray::{Array1, array};
 use crate::Molecule;
 
 // Compute the torsional forces on the molecule
-pub fn torsional_forces(molecule: &mut Molecule) -> &mut Molecule{
+pub fn torsional_forces(molecule: &mut Molecule, force_constant: f64) -> &mut Molecule{
     let num_torsions = molecule.equilibrium_torsion.len();
 
     // Calculate the current torsion angles for each torsion
@@ -43,8 +43,6 @@ pub fn torsional_forces(molecule: &mut Molecule) -> &mut Molecule{
 
     // Compute the torsional forces
     for (index, &(i, j, k, l, equilibrium_torsion_angle)) in molecule.equilibrium_torsion.iter().enumerate() {
-        let force_constant = 1.0; // You can adjust this value as needed
-
         // Compute the difference between the current torsion angle and the equilibrium torsion angle
         let delta_angle = current_torsion_angles[index] - equilibrium_torsion_angle;
 
@@ -93,7 +91,8 @@ pub fn torsional_forces(molecule: &mut Molecule) -> &mut Molecule{
             m1[2] * m2[0] - m1[0] * m2[2],
             m1[0] * m2[1] - m1[1] * m2[0]
         ];
-        let gradient = (cross_product * torsional_force_constant).dot(&rkj3) / (rkj4.dot(&rkj4) + 1e-10);
+        let mut gradient = (cross_product * torsional_force_constant).dot(&rkj3) / (rkj4.dot(&rkj4) + 1e-10);
+        gradient = force_constant * gradient;
 
         // Apply the torsional forces to the atoms
         /* 

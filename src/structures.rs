@@ -32,7 +32,7 @@ fn diagonal_to_vectors(diagonal_matrix: &Array2<f64>) -> Array2<f64> {
 /*
     Atom structure
 */
-#[derive(Clone, Copy, Debug)]
+#[derive(Default, Clone, Copy, Debug)]
 pub struct Atom<String> {
     pub position: [f64; 3],
     pub velocity: [f64; 3],
@@ -55,7 +55,7 @@ impl Atom<String> {
 }
 
 // Define a struct to represent a molecule
-#[derive(Clone, Debug)]
+#[derive(Default, Clone, Debug)]
 pub struct Molecule {
     pub atoms: Vec<Atom<String>>,                             // list of Atom structs
     pub coordinates: Array2<f64>,                             // atomic coordinates
@@ -293,6 +293,30 @@ impl Molecule {
         }
     }
 
+    fn recompute_angles(&mut self) {
+        // reinitialize the current torsion and valence angles
+        self.torsion_current = Vec::new();
+        self.valence_current = Vec::new();
+        // redefine the valence angles
+        for i in 0..self.num_atoms {
+            for j in i..self.num_atoms {
+                for k in j..self.num_atoms {
+                    self.valence_angle_per_atom(i, j, k, false); 
+                }
+            }
+        }
+        // redefine the torsion angles
+        for i in 0..self.num_atoms {
+            for j in i..self.num_atoms {
+                for k in j..self.num_atoms {
+                    for l in k..self.num_atoms {
+                        self.torsion_angle_per_atom(i, j, k, l, false);
+                    }
+                }
+            }
+        }
+    }
+
     pub fn apply_langevin_forces(&mut self, time_step: f64) {
         let num_atoms = self.num_atoms;
         let mut rng = rand::thread_rng();
@@ -311,5 +335,20 @@ impl Molecule {
             *force += -self.damping_coefficient * velocity * time_step
                 + temperature_factor * *random_force;
         }
+    }
+
+    pub fn update_atoms(&mut self){
+        /*
+            Update the position and velocity of each atom
+            if the molecular coordinates and velocities are
+            modified
+        */
+        for i in 0..self.num_atoms {
+            for j in 0..3 {
+                let coord: f64 = self.coordinates[[i,j]];
+                    self.atoms[i].position[j] = coord;
+                    self.atoms[i].velocity[j] = self.velocities[[i,j]];
+        }
+    }
     }
 }
