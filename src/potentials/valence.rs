@@ -4,7 +4,7 @@ use ndarray::{Array2, array};
 /*
     Energy contribution of the valence angle
 */
-fn calculate_angle_energy(molecule: &Molecule, atom_id: usize, force_constant: f64) -> f64 {
+fn calculate_angle_energy(molecule: &mut Molecule, atom_id: usize, force_constant: f64, save_to_molecule: bool) -> f64 {
     let (i, j, k, equilibrium_angle) = molecule.equilibrium_valence[atom_id];
     let coordinates = &molecule.coordinates;
 
@@ -20,6 +20,10 @@ fn calculate_angle_energy(molecule: &Molecule, atom_id: usize, force_constant: f
     // The valence angle potential energy using harmonic approximation
     let valence_energy = 0.5 * force_constant * theta_diff * theta_diff;
 
+    if save_to_molecule && molecule.valence_current.len() > 0 {
+        molecule.valence_current[atom_id].3 = cos_theta.acos();
+    }
+
     valence_energy
 }
 
@@ -28,7 +32,7 @@ pub fn valence_angle_energy(molecule: &mut Molecule, energy_constant: f64, save_
     let mut total_valence_energy = 0.0;
 
     for angle_id in 0..molecule.equilibrium_valence.len() {
-        let valence_energy = calculate_angle_energy(molecule, angle_id, energy_constant);
+        let valence_energy = calculate_angle_energy(molecule, angle_id, energy_constant, save_to_molecule);
         total_valence_energy += valence_energy;
     }
 

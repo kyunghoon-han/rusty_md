@@ -3,7 +3,7 @@ use::ndarray::Array2;
 #[path="../potentials/potentialToForces.rs"] mod ptf;
 pub use ptf::{calculate_potential_energy, compute_forces};
 #[path="../commonUtils.rs"] mod utils;
-pub use utils::kinetic_energy;
+pub use utils::{kinetic_energy, atom_update};
 use std::f64::EPSILON;
 
 // Function to perform the Steepest Descent energy minimization
@@ -62,6 +62,8 @@ pub fn steepest_descent_minimization(
 
         // Step 6: Increment the iteration counter
         iteration += 1;
+
+        atom_update(molecule);
     }
     molecule
 }

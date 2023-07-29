@@ -1,3 +1,5 @@
+use std::thread::current;
+
 use crate::Molecule;
 use ndarray::{Array2, Array1, array};
 
@@ -52,6 +54,9 @@ save_to_molecule: bool) -> f64{
 
         // Add the torsional energy to the total energy of the molecule
         energy += torsional_energy;
+        if save_to_molecule && molecule.torsion_current.len() > 0 {
+            molecule.torsion_current[index].4 = current_torsion_angles[index];
+        }
     }
 
     if save_to_molecule {

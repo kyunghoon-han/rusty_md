@@ -19,3 +19,15 @@ pub fn kinetic_energy(molecule: &mut Molecule) -> f64{
 
     kinetic_energy
 }
+
+pub fn atom_update(molecule : &mut Molecule){
+    // update the values for each atom
+    let num_atoms = molecule.num_atoms;
+    for i in 0..num_atoms {
+        for j in 0..3 {
+            let coord: &f64 = &molecule.coordinates[[i,j]];
+                molecule.atoms[i].position[j] = *coord;
+                molecule.atoms[i].velocity[j] = molecule.velocities[[i,j]];
+        }
+    }
+}
