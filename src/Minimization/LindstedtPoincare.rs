@@ -1,128 +1,115 @@
 use crate::Molecule;
+use ndarray::{Array1, Array2, s};
 #[path="../potentials/potentialToForces.rs"] mod ptf;
 pub use ptf::{calculate_potential_energy, compute_forces};
+#[path="../boundaryConditions/periodic.rs"] mod periodic;
+pub use periodic::apply_periodic_boundary_conditions;
+#[path="../commonUtils.rs"] mod commons;
+pub use commons::{
+    compute_hessian,
+    get_normal_modes_and_frequencies
+};
 
+pub fn lindstedt_poincare(
+    molecule: &mut Molecule,
+    time_step: f64,
+    num_steps: usize,
+    list_potentials: Vec<String>,
+    epsilon: f64,
+    order_corrections: usize,
+){
+    // Step 1 : Zeroth-order solution
+    let initial_coordinates = molecule.coordinates.clone();
+    let initial_velocities = molecule.coordinates.clone();
 
-// Function to perform Lindstedt-Poincare method and obtain a periodic trajectory
-pub fn lindstedt_poincare(molecule: &mut Molecule, total_time: f64, time_step: f64, perturbation_order: usize) {
-    let num_steps = (total_time / time_step) as usize;
+    for _step in 0..num_steps {
+        // Step 2 : Computation of the net-forces for all atoms
+        calculate_potential_energy(molecule, list_potentials.clone(), true);
+        compute_forces(molecule, list_potentials.clone(), true);
 
-    // Main integration loop
-    for step in 0..num_steps {
-        // Apply numerical integration to update positions and velocities
-        perform_integration(molecule, time_step);
+        // Compute the normal modes and frequencies
+        let (normal_modes, frequencies) = get_normal_modes_and_frequencies(molecule, list_potentials.clone()).unwrap();
+    
+        update_verlet_with_perturbed_frequency(molecule, time_step, epsilon, frequencies, normal_modes, list_potentials.clone());
+        compute_forces(molecule, list_potentials.clone(), true);
 
-        // Apply perturbation terms to update positions and velocities
-        apply_perturbation_terms(molecule, perturbation_order);
+        // Step 4: Combine the contributions from the zeroth-order solution and higher-order corrections
+        // This step depends on the details of how you calculate the zeroth-order solution and the higher-order corrections
+        let higher_order_solution = compute_higher_order_corrections(molecule, list_potentials.clone(), epsilon, order_corrections, normal_modes.clone(), frequencies.clone());
+        molecule.coordinates = molecule.coordinates + higher_order_solution;
 
-        // Apply periodic boundary conditions to positions and velocities
-        let box_dimensions = [x_dim, y_dim, z_dim]; // Replace with actual box dimensions
-        apply_periodic_boundary_conditions(box_dimensions);
-    }
-}
+        // Step 5: Update velocities and forces at each time step based on the approximate positions obtained
+        // In this case, we'll use the new positions from the combined solution to compute the forces and then update the velocities
+        compute_forces(molecule, list_potentials.clone(), true);
+        molecule.velocities = molecule.forces * time_step;
 
-
-fn factorial(n: usize) -> f64 {
-    (1..=n).fold(1.0, |acc, i| acc * i as f64)
-}
-
-fn apply_perturbation_terms(
-    molecue: &mut Molecule, list_potentials: Vec<String>,
-    perturbation_order: usize, dt: f64) {
-
-    // Compute the potential energies and the relevant forces
-    calculate_potential_energy(molecule, list_potentials, true);
-    compute_forces(molecule, list_potentials, true);
-    update_verlet(molecule, dt); // update the position and velocity
-
-    // find a suitable ∆t for perturbing the angular components
-    let delta_t = molecule.compute_perturbation_delta_t(perturbation_order);
-
-    // Compute the perturbation terms for valence angles
-    for (index, &(_, _, _, eq_angle)) in molecule.equilibrium_valence.iter().enumerate() {
-        let angle_curr = molecule.valence_current[index].3;
-        let delta_angle = angle_curr - eq_angle;
-        let mut perturbation = 0.0;
-
-        for p in 1..=perturbation_order {
-            perturbation += (delta_t * delta_angle).powi(p as i32) / factorial(p);
+        // Step 7: Optional: Implement energy conservation checks and other considerations
+        // Implementing this is highly dependent on your specific system and the details of the Lindstedt-Poincaré method
+        // As a placeholder:
+        let old_energy = molecule.energy;
+        calculate_potential_energy(molecule, list_potentials.clone(), true);
+            if (old_energy - molecule.energy).abs() > 1e-6 {
+                println!("Energy conservation check failed!");
+            }
         }
-
-        // Update valence angle
-        self.valence_current[i] = eq_angle + perturbation;
     }
 
-    // Compute the perturbation terms for torsion angles
-    for (index, &(_, _, _, _, eq_angle)) in molecule.equilibrium_torsion.iter().enumerate() {
-        let angle_curr = molecule.torsion_current[index].4;
-        let delta_angle = angle_curr - eq_angle;
-        let mut perturbation = 0.0;
+fn update_verlet_with_perturbed_frequency(
+    molecule: &mut Molecule,
+    time_step: f64,
+    epsilon: f64,
+    frequencies: Array1<f64>,
+    normal_modes: Array2<f64>,
+    list_potentials: Vec<String>
+) {
+    // Update positions using Verlet algorithm with perturbed frequency
+    molecule.coordinates = molecule.coordinates + molecule.velocities * time_step 
+                          + 0.5 * molecule.forces / molecule.masses * time_step.powi(2);
 
-        for p in 1..=perturbation_order {
-            perturbation += (delta_t * delta_angle).powi(p as i32) / factorial(p);
-        }
+    // Update velocities half timestep
+    let old_velocities = molecule.velocities.clone();
+    molecule.velocities = molecule.velocities + 0.5 * molecule.forces / molecule.masses * time_step;
 
-        // Update torsion angle
-        molecule.torsion_current[index].4 = angle_eq + perturbation;
-    }
+    // Compute new forces using new positions
+    // Assuming you have a function to update forces based on the current state of the system
+    compute_forces(molecule, list_potentials.clone(), true);
+
+    // Perturb the frequencies using epsilon and normal modes
+    let perturbed_frequencies = frequencies * (1.0 + epsilon);
+    
+    // Apply normal mode transformation to get the new coordinates in normal mode space
+    let transformed_coords = normal_modes.dot(&molecule.coordinates.t()).t().to_owned();
+    molecule.coordinates = normal_modes.t().dot(&transformed_coords.t()).t().to_owned();
+    
+    // Update velocities the rest half timestep using the new (perturbed) forces
+    molecule.velocities = old_velocities + 0.5 * molecule.forces / molecule.masses * time_step;
 }
 
-// Function to update the positions and velocities of atoms using the Verlet algorithm
-fn update_verlet(molecule: &mut Molecule, dt: f64) {
-    let forces = &molecule.forces;
-
-    for i in 0..molecule.num_atoms {
-        let mut new_coords = molecule.coordinates.row(i).to_owned();
-        let mut new_velocities = molecule.velocities.row(i).to_owned();
-
-        for dim in 0..3 {
-            let velocity_increment = forces[[i, dim]] / molecule.masses[[i,i]] * dt;
-            // Update velocities using Verlet algorithm
-            // note the minus sign here
-            new_velocities[dim] += velocity_increment;
-            // Update positions using Verlet algorithm
-            new_coords[dim] += molecule.velocities[[i, dim]] * dt + 0.5 * velocity_increment.powi(2);
+fn compute_higher_order_corrections(
+    molecule: &mut Molecule,
+    list_potentials: Vec<String>,
+    epsilon: f64,
+    max_order: usize,
+    normal_modes: Array2<f64>,
+    frequencies: Array1<f64>
+) -> Array2<f64> {
+    let mut solution = normal_modes.clone();
+    for order in 1..=max_order {
+        let mut order_correction = Array2::zeros((molecule.num_atoms, 3));
+        for i in 0..normal_modes.dim().0 {
+            // compute the i-th derivative of the potential
+            let h = epsilon.powi(order as i32); // finite difference step size
+            for _ in 0..order {
+                molecule.coordinates += h * normal_modes.slice(s![i, ..]);
+                let perturbed_potential = calculate_potential_energy(molecule, list_potentials.clone(), false);
+                molecule.coordinates -= 2.0 * h * normal_modes.slice(s![i, ..]);
+                let perturbed_potential_minus = calculate_potential_energy(molecule, list_potentials.clone(), false);
+                molecule.coordinates += h * normal_modes.slice(s![i, ..]); // reset coordinates to original position
+                let derivative = (perturbed_potential - perturbed_potential_minus) / (2.0 * h);
+                order_correction += derivative * normal_modes.slice(s![i, ..]) * epsilon.powi(order as i32);
+            }
         }
-
-        molecule.coordinates.row_mut(i).assign(&new_coords);
-        molecule.velocities.row_mut(i).assign(&new_velocities);
+        solution += order_correction;
     }
-}
-
-// Function to compute perturbation step size delta_t
-fn compute_perturbation_delta_t(molecule: &mut Molecule, perturbation_order: usize) -> f64 {
-    // Initialize delta_t to a small value
-    let mut delta_t = 1e-6;
-
-    // Compute the maximum difference between current and equilibrium valence angles
-    let max_valence_difference = self
-        .equilibrium_valence
-        .iter().enumerate()
-        .map(|(index, &(_, _, _, eq_angle))| {
-            let angle_curr = molecule.valence_current[index].3;
-            (angle_curr - angle_eq).abs()
-        })
-        .fold(0.0, |acc, diff| acc.max(diff));
-
-    // Compute the maximum difference between current and equilibrium torsion angles
-    let max_torsion_difference = self
-        .equilibrium_torsion
-        .iter().enumerate()
-        .map(|(index, &(i, j, k, l, eq_angle))| {
-            let angle_curr = molecule.torsion_current[index].4;
-            (angle_curr - angle_eq).abs()
-        })
-        .fold(0.0, |acc, diff| acc.max(diff));
-
-    // Take the maximum of both differences
-    let max_difference = max_valence_difference.max(max_torsion_difference);
-
-    // Compute delta_t based on the maximum difference and perturbation order
-    if max_difference > 1e-9 {
-        // Use a scaling factor to ensure delta_t is small compared to the maximum difference
-        // Here, 0.1 is an arbitrary scaling factor, you can adjust it based on your system's dynamics
-        delta_t = 0.1 * max_difference / (perturbation_order as f64).powf(2.0);
-    }
-
-    delta_t
+    solution
 }
