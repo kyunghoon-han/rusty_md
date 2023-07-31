@@ -26,6 +26,8 @@ pub use crate::dynamics::run_iterations;
 // Minimization
 #[path="./Minimization/steepestDescent.rs"] mod SD;
 pub use crate::SD::steepest_descent_minimization;
+#[path="./Minimization/LindstedtPoincare.rs"] mod lp;
+pub use crate::lp::lindstedt_poincare;
 // reading CIF files
 #[path="./fileIO/readCIF.rs"] mod cif_read;
 pub use crate::cif_read::read_cif_file;
@@ -47,6 +49,10 @@ fn main() {
     calculate_potential_energy(molecule, list_potentials.clone(), true);
     molecule = compute_forces(molecule, list_potentials.clone(), false);
     molecule = steepest_descent_minimization(molecule, 10000,1e-4, 1e-10, 1e-12, list_potentials);
+
+    // lindstedt-poincaré
+    lindstedt_poincare(molecule, 10.0, 0.001, list_potentials, 4);
+
 
 
     /*

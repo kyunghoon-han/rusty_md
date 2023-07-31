@@ -22,15 +22,15 @@ pub fn apply_periodic_boundary_conditions(molecule: &mut Molecule, time_step: f6
             // Wrap the velocity based on the boundary crossing
             if velocity_units_per_timestep > 0.0 && coordinate < box_dimensions[dim] {
                 // Atom moves out from the negative boundary
-                velocity -= box_dimensions[dim] / self.time_step;
+                velocity -= box_dimensions[dim] / time_step;
             } else if velocity_units_per_timestep < 0.0 && coordinate >= box_dimensions[dim] {
                 // Atom moves out from the positive boundary
-                velocity += box_dimensions[dim] / self.time_step;
+                velocity += box_dimensions[dim] / time_step;
             }
 
             // Update the atom's position and velocity with the wrapped values
-            self.coordinates[[i, dim]] = coordinate;
-            self.velocities[[i, dim]] = velocity;
+            molecule.coordinates[[i, dim]] = coordinate;
+            molecule.velocities[[i, dim]] = velocity;
         }
     }
 }
