@@ -30,18 +30,18 @@ pub fn lindstedt_poincare(
         // Compute the normal modes and frequencies
         let (normal_modes, frequencies) = get_normal_modes_and_frequencies(molecule, list_potentials.clone()).unwrap();
     
-        update_verlet_with_perturbed_frequency(molecule, time_step, epsilon, frequencies, normal_modes, list_potentials.clone());
+        update_verlet_with_perturbed_frequency(molecule, time_step, epsilon, frequencies.clone(), normal_modes.clone(), list_potentials.clone());
         compute_forces(molecule, list_potentials.clone(), true);
 
         // Step 4: Combine the contributions from the zeroth-order solution and higher-order corrections
         // This step depends on the details of how you calculate the zeroth-order solution and the higher-order corrections
         let higher_order_solution = compute_higher_order_corrections(molecule, list_potentials.clone(), epsilon, order_corrections, normal_modes.clone(), frequencies.clone());
-        molecule.coordinates = molecule.coordinates + higher_order_solution;
+        molecule.coordinates = molecule.clone().coordinates + higher_order_solution;
 
         // Step 5: Update velocities and forces at each time step based on the approximate positions obtained
         // In this case, we'll use the new positions from the combined solution to compute the forces and then update the velocities
         compute_forces(molecule, list_potentials.clone(), true);
-        molecule.velocities = molecule.forces * time_step;
+        molecule.velocities = molecule.clone().forces * time_step;
 
         // Step 7: Optional: Implement energy conservation checks and other considerations
         // Implementing this is highly dependent on your specific system and the details of the Lindstedt-Poincaré method
@@ -63,12 +63,12 @@ fn update_verlet_with_perturbed_frequency(
     list_potentials: Vec<String>
 ) {
     // Update positions using Verlet algorithm with perturbed frequency
-    molecule.coordinates = molecule.coordinates + molecule.velocities * time_step 
-                          + 0.5 * molecule.forces / molecule.masses * time_step.powi(2);
+    molecule.coordinates = molecule.clone().coordinates + molecule.clone().velocities * time_step 
+                          + 0.5 * molecule.clone().forces / molecule.mass_n_by_3() * time_step.powi(2);
 
     // Update velocities half timestep
     let old_velocities = molecule.velocities.clone();
-    molecule.velocities = molecule.velocities + 0.5 * molecule.forces / molecule.masses * time_step;
+    molecule.velocities = molecule.clone().velocities + 0.5 * molecule.clone().forces / molecule.mass_n_by_3() * time_step;
 
     // Compute new forces using new positions
     // Assuming you have a function to update forces based on the current state of the system
@@ -82,34 +82,75 @@ fn update_verlet_with_perturbed_frequency(
     molecule.coordinates = normal_modes.t().dot(&transformed_coords.t()).t().to_owned();
     
     // Update velocities the rest half timestep using the new (perturbed) forces
-    molecule.velocities = old_velocities + 0.5 * molecule.forces / molecule.masses * time_step;
+    molecule.velocities = old_velocities + 0.5 * molecule.clone().forces / molecule.mass_n_by_3() * time_step;
 }
 
-fn compute_higher_order_corrections(
-    molecule: &mut Molecule,
-    list_potentials: Vec<String>,
-    epsilon: f64,
-    max_order: usize,
+pub fn compute_higher_order_corrections(
+    molecule: &mut Molecule, 
+    list_potentials: Vec<String>, 
+    epsilon: f64, 
+    max_order: usize, 
     normal_modes: Array2<f64>,
-    frequencies: Array1<f64>
-) -> Array2<f64> {
-    let mut solution = normal_modes.clone();
-    for order in 1..=max_order {
-        let mut order_correction = Array2::zeros((molecule.num_atoms, 3));
-        for i in 0..normal_modes.dim().0 {
-            // compute the i-th derivative of the potential
-            let h = epsilon.powi(order as i32); // finite difference step size
-            for _ in 0..order {
-                molecule.coordinates += h * normal_modes.slice(s![i, ..]);
-                let perturbed_potential = calculate_potential_energy(molecule, list_potentials.clone(), false);
-                molecule.coordinates -= 2.0 * h * normal_modes.slice(s![i, ..]);
-                let perturbed_potential_minus = calculate_potential_energy(molecule, list_potentials.clone(), false);
-                molecule.coordinates += h * normal_modes.slice(s![i, ..]); // reset coordinates to original position
-                let derivative = (perturbed_potential - perturbed_potential_minus) / (2.0 * h);
-                order_correction += derivative * normal_modes.slice(s![i, ..]) * epsilon.powi(order as i32);
-            }
+    frequencies: Array1<f64>) -> Array2<f64> {
+    
+    // initialize the result with the same shape as molecule.coordinates
+    let mut total_correction = Array2::<f64>::zeros(molecule.coordinates.raw_dim());
+
+    for j in 0..frequencies.len() {
+        let frequency = frequencies[j];
+
+        // prepare empty correction of the same shape as molecule.coordinates
+        let mut correction = Array2::<f64>::zeros(molecule.coordinates.raw_dim());
+
+        for order in 1..=max_order {
+            // Update correction at the i-th order
+            let nth_derivative = compute_nth_derivative(molecule, list_potentials.clone(), order);
+            let correction_adder = nth_derivative / (factorial(order as u64) as f64)* (epsilon * frequency).powi(order as i32);
+            correction += correction_adder;
         }
-        solution += order_correction;
+
+        // Add the computed correction for the j-th normal mode to the total correction
+        total_correction = total_correction + correction;
     }
-    solution
+
+    return total_correction;
+}
+
+
+pub fn compute_nth_derivative(
+    molecule: &Molecule, 
+    list_potentials: Vec<String>, 
+    order: usize) -> f64 {
+    
+    let h = 1e-5; // step size for finite differences
+    let mut molecule_perturbed = molecule.clone();
+
+    if order == 0 {
+        // Just compute the potential energy function
+        return calculate_potential_energy(&mut molecule_perturbed, list_potentials, false);
+    } else {
+        // Compute a finite difference
+        let mut forward = 0.0;
+        let mut backward = 0.0;
+
+        for _ in 0..order {
+            molecule_perturbed.coordinates += h;
+            forward = calculate_potential_energy(&mut molecule_perturbed, list_potentials.clone(), false);
+            
+            molecule_perturbed.coordinates -= 2.0*h;
+            backward = calculate_potential_energy(&mut molecule_perturbed, list_potentials.clone(), false);
+            
+            molecule_perturbed.coordinates += h;  // Restore original position
+        }
+
+        let nth_derivative = (forward - backward) / (2.0 * h.powi(order as i32));
+        return nth_derivative;
+    }
+}
+
+fn factorial(n: u64) -> u64 {
+    match n {
+        0 => 1,
+        _ => n * factorial(n-1),
+    }
 }

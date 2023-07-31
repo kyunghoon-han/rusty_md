@@ -1,6 +1,6 @@
 use crate::Molecule;
 extern crate ndarray;
-use ndarray::{Array2, array};
+use ndarray::array;
 #[path="../forces/distances.rs"] mod dist;
 pub use dist::{calculate_distance, calculate_direction};
 

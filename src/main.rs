@@ -48,10 +48,16 @@ fn main() {
 
     calculate_potential_energy(molecule, list_potentials.clone(), true);
     molecule = compute_forces(molecule, list_potentials.clone(), false);
-    molecule = steepest_descent_minimization(molecule, 10000,1e-4, 1e-10, 1e-12, list_potentials);
+    //molecule = steepest_descent_minimization(molecule, 10000,1e-4, 1e-10, 1e-12, list_potentials.clone());
 
     // lindstedt-poincaré
-    lindstedt_poincare(molecule, 10.0, 0.001, list_potentials, 4);
+    lindstedt_poincare(
+        molecule,
+        1e-3,
+        10,
+        list_potentials.clone(),
+        1e-4,
+        4);
 
 
 

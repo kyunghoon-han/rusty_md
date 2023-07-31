@@ -51,14 +51,14 @@ pub fn compute_hessian(molecule: &mut Molecule, list_potentials: Vec<String>) ->
 
         // Calculate the gradient in the positive direction
         let energy_plus = calculate_potential_energy(molecule, list_potentials.clone(), true);
-        let grad_plus = compute_forces(molecule, list_potentials.clone(), true).forces;
+        let grad_plus = compute_forces(molecule, list_potentials.clone(), true).clone().forces;
 
         // Perturb the i-th coordinate in the negative direction
         molecule.coordinates[[i/3, i%3]] -= 2.0*DELTA;
 
         // Calculate the gradient in the negative direction
         let energy_minus = calculate_potential_energy(molecule, list_potentials.clone(), true);
-        let grad_minus = compute_forces(molecule, list_potentials.clone(), true).forces;
+        let grad_minus = compute_forces(molecule, list_potentials.clone(), true).clone().forces;
 
         // Restore the i-th coordinate
         molecule.coordinates[[i/3, i%3]] += DELTA;
