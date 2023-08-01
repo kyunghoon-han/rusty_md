@@ -31,7 +31,7 @@ pub fn lindstedt_poincare(
         // Compute the normal modes and frequencies
         let (normal_modes, frequencies) = get_normal_modes_and_frequencies(molecule, list_potentials.clone()).unwrap();
 
-        update_verlet_with_perturbed_frequency(molecule, time_step, epsilon, frequencies.clone(), normal_modes.clone(), list_potentials.clone());
+        update_verlet_with_perturbed_frequency(molecule, time_step, epsilon, frequencies.clone(), normal_modes.clone(), list_potentials.clone(), order_corrections);
         
         compute_forces(molecule, list_potentials.clone(), true);
 
@@ -62,28 +62,16 @@ pub fn lindstedt_poincare(
         epsilon: f64,
         frequencies: Array1<f64>,
         normal_modes: Array2<f64>,
-        list_potentials: Vec<String>
+        list_potentials: Vec<String>,
+        order_corrections: usize,
     ) {
-        // Update positions using Verlet algorithm with perturbed frequency
-        molecule.coordinates = molecule.clone().coordinates + molecule.clone().velocities * time_step 
-                              + 0.5 * molecule.clone().forces / molecule.mass_n_by_3() * time_step.powi(2);
-    
-        // Update velocities half timestep
-        let old_velocities = molecule.velocities.clone();
-        molecule.velocities = molecule.clone().velocities + 0.5 * molecule.clone().forces / molecule.mass_n_by_3() * time_step;
-    
-        // Compute new forces using new positions
-        // Assuming you have a function to update forces based on the current state of the system
-        compute_forces(molecule, list_potentials.clone(), true);
-    
-        // Perturb the frequencies using epsilon and normal modes
+        // Perturb the frequencies
         let perturbed_frequencies = frequencies * (1.0 + epsilon);
-        
+    
         // Flatten the coordinates to apply normal mode transformation
         let flat_coordinates = molecule.coordinates.clone().into_shape((3 * molecule.num_atoms, )).unwrap();
         
         // Apply normal mode transformation to get the new coordinates in normal mode space
-        // dot product had some nasty error, so here you go...
         let transformed_coords = {
             let mut result = Array2::zeros((normal_modes.nrows(), flat_coordinates.len()));
             for i in 0..normal_modes.nrows() {
@@ -97,13 +85,33 @@ pub fn lindstedt_poincare(
             }
             result
         };
+        
+        // Perform calculations in the normal mode coordinates space
+        // Here, apply the Verlet algorithm in normal mode space
+        let new_transformed_coords = transformed_coords + molecule.clone().velocities * time_step 
+                                      + 0.5 * perturbed_frequencies.mapv(|freq| freq.powi(2)) * time_step.powi(2);
+                                      
+        // Transform back to Cartesian coordinates
+        let back_to_cartesian = normal_modes.t().dot(&new_transformed_coords);
+        
+        // Reshape into the original shape (molecule.num_atoms, 3)
+        let reshaped_coords = back_to_cartesian.into_shape((molecule.num_atoms, 3)).unwrap();
+        
+        // Assign the reshaped coordinates back to the molecule
+        //molecule.coordinates = reshaped_coords;
+        
 
-        // let reshaped_coords = transformed_coords.into_shape((molecule.num_atoms, 3)).unwrap();
-        // again the dot product had some nasty error, so here you go...
-        molecule.coordinates = (transformed_coords.dot(&normal_modes)).to_owned();
-        // Update velocities the rest half timestep using the new (perturbed) forces
-        molecule.velocities = old_velocities + 0.5 * molecule.clone().forces / molecule.mass_n_by_3() * time_step;
+        // Save the old velocities for later use
+        let old_velocities = molecule.velocities.clone();
+        molecule.velocities = molecule.clone().velocities + 0.5 * perturbed_frequencies.clone() * molecule.clone().forces / molecule.mass_n_by_3() * time_step;
+    
+        // Re-compute forces using new positions
+        compute_forces(molecule, list_potentials.clone(), true);
+    
+        // Update velocities for the rest half timestep using the new forces
+        molecule.velocities = old_velocities + 0.5 * perturbed_frequencies * molecule.clone().forces / molecule.mass_n_by_3() * time_step;
     }
+    
     
 
 pub fn compute_higher_order_corrections(
