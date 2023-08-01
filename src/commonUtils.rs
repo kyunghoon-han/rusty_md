@@ -1,6 +1,5 @@
 use crate::Molecule;
 use ndarray::{Array, Array1, Array2, ArrayView2, s};
-use ndarray_linalg::{Eigh, UPLO};
 #[path="./potentials/potentialToForces.rs"] mod ptf;
 pub use ptf::{calculate_potential_energy, compute_forces};
 
@@ -65,8 +64,9 @@ pub fn compute_hessian(molecule: &mut Molecule, list_potentials: Vec<String>) ->
 
         // Compute the second derivatives by central finite differences
         let second_derivatives = (grad_plus - grad_minus) / (2.0*DELTA);
-        
-        hessian.slice_mut(s![i, ..]).assign(&second_derivatives.t());
+
+        //hessian.slice_mut(s![i, ..]).assign(&second_derivatives.t());
+        hessian.slice_mut(s![i, ..]).assign(&second_derivatives.t().into_shape((num_dims,)).unwrap());
     }
 
     hessian
@@ -75,30 +75,46 @@ pub fn compute_hessian(molecule: &mut Molecule, list_potentials: Vec<String>) ->
 /*
     For computing the normal modes and frequencies
 */
-pub fn get_normal_modes_and_frequencies(molecule: &mut Molecule, list_potentials: Vec<String>) -> Result<(Array2<f64>, Array1<f64>), ndarray_linalg::error::LinalgError> {
+use nalgebra::base::Matrix;
+use nalgebra::base::DVector;
+use nalgebra::base::DMatrix;
+use nalgebra::linalg::SymmetricEigen as SymmetricEigenDecomp;
+use nalgebra::linalg::SymmetricEigen;
+
+/*
+    For computing the normal modes and frequencies
+*/
+pub fn get_normal_modes_and_frequencies(molecule: &mut Molecule, list_potentials: Vec<String>) -> Result<(Array2<f64>, Array1<f64>), &'static str> {
     // Compute the Hessian matrix
     let hessian = compute_hessian(molecule, list_potentials.clone());
 
     // Mass-weight the Hessian matrix
-    let mut mass_weighted_hessian = hessian.clone();
+    let mut mass_weighted_hessian = DMatrix::from_iterator(
+        hessian.dim().0,
+        hessian.dim().1,
+        hessian.iter().cloned(),
+    );
+
     for (i, atom) in molecule.atoms.iter().enumerate() {
         for j in 0..3 {
-            mass_weighted_hessian.slice_mut(s![3*i+j, ..]).map_inplace(|x| *x /= atom.mass.sqrt());
-            mass_weighted_hessian.slice_mut(s![.., 3*i+j]).map_inplace(|x| *x /= atom.mass.sqrt());
+            mass_weighted_hessian.row_mut(3 * i + j).apply(|x| *x /= atom.mass.sqrt());
+            mass_weighted_hessian.column_mut(3 * i + j).apply(|x| *x /= atom.mass.sqrt());
         }
     }
 
     // Diagonalize the mass-weighted Hessian
-    match mass_weighted_hessian.eigh(UPLO::Upper) {
-        Ok((values, vectors)) => {
-            // The eigenvalues are the squares of the frequencies (in atomic units)
-            let frequencies = values.mapv(|x| x.sqrt());
+    let eigen_decomp = SymmetricEigen::new(mass_weighted_hessian);
 
-            // The eigenvectors are the normal modes
-            let normal_modes = vectors;
+    // The eigenvalues are the squares of the frequencies (in atomic units)
+    let frequencies = eigen_decomp.eigenvalues.map(|x| x.sqrt());
 
-            Ok((normal_modes, frequencies))
-        },
-        Err(e) => Err(e)
-    }
+    // The eigenvectors are the normal modes
+    let normal_modes = eigen_decomp.eigenvectors;
+
+    // Convert DMatrix and DVector to Array2<f64> and Array1<f64> respectively
+    let frequencies_ndarray: Array1<f64> = Array::from(frequencies.as_slice().to_owned());
+    let normal_modes_ndarray: Array2<f64> = Array::from_shape_vec((normal_modes.nrows(), normal_modes.ncols()), normal_modes.as_slice().to_owned()).unwrap();
+
+
+    Ok((normal_modes_ndarray, frequencies_ndarray))
 }

@@ -5,6 +5,8 @@
 #[path = "./structures.rs"]
 mod structures;
 pub use crate::structures::{Atom, Molecule};
+#[path="./commonUtils.rs"] mod commons;
+pub use crate::commons::*;
 #[path = "./fileIO/saveXYZ.rs"] mod save_xyz;
 pub use crate::save_xyz::*;
 // Bond length table
@@ -57,7 +59,8 @@ fn main() {
         10,
         list_potentials.clone(),
         1e-4,
-        4);
+        4
+    );
 
 
 
