@@ -81,14 +81,26 @@ pub fn lindstedt_poincare(
         
         // Flatten the coordinates to apply normal mode transformation
         let flat_coordinates = molecule.coordinates.clone().into_shape((3 * molecule.num_atoms, )).unwrap();
-        println!("meh");
+        
         // Apply normal mode transformation to get the new coordinates in normal mode space
-        let transformed_coords = normal_modes.dot(&flat_coordinates);
+        // dot product had some nasty error, so here you go...
+        let transformed_coords = {
+            let mut result = Array2::zeros((normal_modes.nrows(), flat_coordinates.len()));
+            for i in 0..normal_modes.nrows() {
+                for j in 0..flat_coordinates.len() {
+                    let mut temp_sum = 0.0;
+                    for k in 0..normal_modes.ncols() {
+                        temp_sum += normal_modes[[i, k]] * flat_coordinates[j];
+                    }
+                    result[[i, j]] = temp_sum;
+                }
+            }
+            result
+        };
 
-        // Transform back the coordinates from normal mode space
-        let reshaped_coords = transformed_coords.into_shape((molecule.num_atoms, 3)).unwrap();
-        molecule.coordinates = normal_modes.t().dot(&reshaped_coords.t()).t().to_owned();
-
+        // let reshaped_coords = transformed_coords.into_shape((molecule.num_atoms, 3)).unwrap();
+        // again the dot product had some nasty error, so here you go...
+        molecule.coordinates = (transformed_coords.dot(&normal_modes)).to_owned();
         // Update velocities the rest half timestep using the new (perturbed) forces
         molecule.velocities = old_velocities + 0.5 * molecule.clone().forces / molecule.mass_n_by_3() * time_step;
     }

@@ -9,7 +9,6 @@ edition = "2021"
 [dependencies]
 nalgebra = "0.32.3"
 ndarray = "0.15.6"
-ndarray-linalg = {version = "0.16.0", features = ["intel-mkl-static"]}
 ndarray-rand = "0.14.0"
 rand = "0.8.5"
 regex = "1.9.1"
