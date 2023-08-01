@@ -56,10 +56,10 @@ fn main() {
     lindstedt_poincare(
         molecule,
         1e-3,
-        10,
+        1000,
         list_potentials.clone(),
-        1e-4,
-        4
+        1e-8,
+        3
     );
 
 

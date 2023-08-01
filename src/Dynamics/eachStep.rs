@@ -1,11 +1,8 @@
 use crate::Molecule;
 extern crate ndarray;
 use ndarray::{Array2, Array};
-
 #[path="../forces/distances.rs"] mod distances;
 pub use distances::vec_to_array2;
-
-
 
 pub fn iteration (
     molecule: &mut Molecule, list_forces: Vec<String>,

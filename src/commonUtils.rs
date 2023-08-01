@@ -75,10 +75,7 @@ pub fn compute_hessian(molecule: &mut Molecule, list_potentials: Vec<String>) ->
 /*
     For computing the normal modes and frequencies
 */
-use nalgebra::base::Matrix;
-use nalgebra::base::DVector;
 use nalgebra::base::DMatrix;
-use nalgebra::linalg::SymmetricEigen as SymmetricEigenDecomp;
 use nalgebra::linalg::SymmetricEigen;
 
 /*

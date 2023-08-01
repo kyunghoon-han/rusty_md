@@ -39,7 +39,7 @@ pub fn compute_forces(molecule: &mut Molecule, list_potentials: Vec<String>, sav
     let mut forces = molecule.forces.clone();
 
     // Calculate the small step for numerical differentiation
-    let h = 1e-6;
+    let h = 1e-10;
 
     // Compute the forces on each atom
     for i in 0..num_atoms {
@@ -88,7 +88,7 @@ pub fn compute_forces(molecule: &mut Molecule, list_potentials: Vec<String>, sav
 
 
             // Calculate the force using numerical differentiation (central difference)
-            let numerical_force = (perturbed_energy - perturbed_energy_neg) / (2.0 * h + 1e-11);
+            let numerical_force = (perturbed_energy - perturbed_energy_neg) / (2.0 * h + 1e-13);
             force_i[dim] = -numerical_force;
         }
 
