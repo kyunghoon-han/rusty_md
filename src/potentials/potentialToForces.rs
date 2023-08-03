@@ -6,8 +6,8 @@ pub use dist::{calculate_distance, calculate_direction};
 
 #[path="./harmonic.rs"] mod harmonic;
 pub use harmonic::harmonic_potential;
-#[path="./LennardJones.rs"] mod LennardJones;
-pub use LennardJones::lj_energy;
+#[path="./LennardJones.rs"] mod lennard_jones;
+pub use lennard_jones::lj_energy;
 #[path="./torsional.rs"] mod torsional;
 pub use torsional::torsional_energy;
 #[path="./valence.rs"] mod valence;
@@ -28,6 +28,11 @@ pub fn calculate_potential_energy(molecule: &mut Molecule, list_potentials: Vec<
     if list_potentials.contains(&"TORSIONAL".to_owned()) {
         energy += torsional_energy(molecule, 1.0, save_to_molecule);
     }
+
+    if save_to_molecule {
+        molecule.energy = energy;
+    }
+
     energy
 }
 
@@ -97,7 +102,9 @@ pub fn compute_forces(molecule: &mut Molecule, list_potentials: Vec<String>, sav
     }
 
     // Update the molecule's forces with the computed forces
-    molecule.forces = forces;
+    if save_to_molecule {
+        molecule.forces = forces;
+    }
 
     molecule
 }

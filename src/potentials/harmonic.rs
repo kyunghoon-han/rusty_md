@@ -21,8 +21,10 @@ pub fn harmonic_potential(molecule: &mut Molecule,
             let distance: f64 = distances[*j];
             let equilibrium_dist: f64 = molecule.connection_lengths[i][*j];
             let displacement: f64 = distance - equilibrium_dist;
-
-            energy += 0.5 * energy_constant * displacement * displacement;
+            
+            if equilibrium_dist > 1e-13 {
+                energy += 0.5 * energy_constant * displacement * displacement;
+            }
         }
     }
     

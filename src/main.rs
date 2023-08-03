@@ -26,8 +26,8 @@ pub use crate::water::{water_orig, water_off};
 #[path="./Dynamics/runDynamics.rs"] mod dynamics;
 pub use crate::dynamics::run_iterations;
 // Minimization
-#[path="./Minimization/steepestDescent.rs"] mod SD;
-pub use crate::SD::steepest_descent_minimization;
+#[path="./Minimization/steepestDescent.rs"] mod sd;
+pub use crate::sd::steepest_descent_minimization;
 #[path="./Minimization/LindstedtPoincare.rs"] mod lp;
 pub use crate::lp::lindstedt_poincare;
 // reading CIF files
@@ -40,48 +40,31 @@ pub use crate::pot::{calculate_potential_energy, compute_forces};
 
 
 fn main() {
-    let mut molecule: &mut Molecule = &mut co2_off();
+    println!("Starting the program.");
+    let mut molecule: &mut Molecule = &mut gazit();
     // list of forces to consider
     let mut list_potentials: Vec<String> =Vec::new();
     list_potentials.push("HARMONIC".to_owned());
     list_potentials.push("LJ".to_owned());
     list_potentials.push("VALENCE".to_owned());
     list_potentials.push("TORSIONAL".to_owned());
-
+    println!("Finished loading the molecule");
+    println!("Start computing the potential energy");
     calculate_potential_energy(molecule, list_potentials.clone(), true);
+    println!("Finished computing the potential energy");
+    println!("Start computing the forces");
     molecule = compute_forces(molecule, list_potentials.clone(), false);
+    println!("Finished computing the forces");
     //molecule = steepest_descent_minimization(molecule, 10000,1e-4, 1e-10, 1e-12, list_potentials.clone());
 
+    println!("Starting the Lindstedt-Poincaré");
     // lindstedt-poincaré
     lindstedt_poincare(
         molecule,
         1e-3,
-        1000,
+        10000,
         list_potentials.clone(),
-        1e-8,
+        1e-5,
         3
     );
-
-
-
-    /*
-    // minimize the molecule
-    println!("Minimizing the molecular structures");
-    let minimization_iters: usize = 1000;
-    let learning_rate: f64        = 0.0001;
-    let threshold_energy: f64     = 0.03;
-    let mut molecule_min = steepest_descent_minimization(
-        &mut molecule_min, minimization_iters, 
-        learning_rate, threshold_energy, list_forces.clone(),
-        "PEG_minimization_energies.txt".to_owned());
-    // Now to MD
-    let num_steps: usize = 100000;
-    let time_step: f64 = 0.001;
-    let filename = "PEG_300K_damp_1e-3_dt_1e-4_with_min_orig.xyz".to_owned();
-    println!("Running the dynamics on PEG...");
-    run_iterations(num_steps, time_step, &mut molecule_min, list_forces.clone(), filename);
-    let filename = "PEG_300K_damp_1e-3_dt_1e-4_without_min_orig.xyz".to_owned();
-    println!("Running the dynamics on PEG...");
-    run_iterations(num_steps, time_step, &mut molecule, list_forces.clone(), filename);
-    */
 }

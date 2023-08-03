@@ -1,7 +1,5 @@
-use std::thread::current;
-
 use crate::Molecule;
-use ndarray::{Array2, Array1, array};
+use ndarray::{Array1, array};
 
 pub fn torsional_energy(molecule: &mut Molecule, energy_constant: f64, 
 save_to_molecule: bool) -> f64{
@@ -21,9 +19,9 @@ save_to_molecule: bool) -> f64{
         let rkj2 = rkj.clone();
         let rkl  = &rl - &rk;
         let rkl2 = rkl.clone();
-        let normal_rji = rji / (rji2.dot(&rji2).sqrt() + 1e-10);
-        let normal_rkj = rkj / (rkj2.dot(&rkj2).sqrt() + 1e-10);
-        let normal_rkl = rkl / (rkl2.dot(&rkl2).sqrt() + 1e-10);
+        let normal_rji = rji / (rji2.dot(&rji2).sqrt() + 1e-13);
+        let normal_rkj = rkj / (rkj2.dot(&rkj2).sqrt() + 1e-13);
+        let normal_rkl = rkl / (rkl2.dot(&rkl2).sqrt() + 1e-13);
         let n1 = array![
             normal_rji[1] * normal_rkj[2] - normal_rji[2] * normal_rkj[1],
             normal_rji[2] * normal_rkj[0] - normal_rji[0] * normal_rkj[2],
@@ -36,8 +34,8 @@ save_to_molecule: bool) -> f64{
             normal_rkj[0] * normal_rkl[1] - normal_rkj[1] * normal_rkl[0]
         ];
         let n2_2 = n2.clone();
-        let m1 = n1 / (n1_2.dot(&n1_2).sqrt() + 1e-10);
-        let m2 = n2 / (n2_2.dot(&n2_2).sqrt() + 1e-10);
+        let m1 = n1 / (n1_2.dot(&n1_2).sqrt() + 1e-13);
+        let m2 = n2 / (n2_2.dot(&n2_2).sqrt() + 1e-13);
         let dot_product = m1.dot(&m2);
         let torsion_angle = dot_product.acos();
 

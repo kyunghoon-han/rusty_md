@@ -16,8 +16,8 @@ pub fn steepest_descent_minimization(
     let mut energy_diff = f64::MAX;
     let mut alpha = mininimization_step.clone();
     // for Armijo rule
-    let mut c = alpha;
-    let mut beta = 0.1;
+    let c = alpha;
+    let beta = 0.1;
 
     while iteration < max_iterations && energy_diff.abs() > energy_tolerance {
         // Step 1: Compute forces using the two-point central difference method
