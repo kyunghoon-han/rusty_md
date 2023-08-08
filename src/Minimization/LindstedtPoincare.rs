@@ -100,7 +100,8 @@ fn update_verlet_with_perturbed_frequency(
     list_potentials: Vec<String>,
 ) {
     // Perturb the frequencies
-    let mut perturbed_frequencies = frequencies * (1.0 + epsilon);
+    //let mut perturbed_frequencies = frequencies * (1.0 + epsilon);
+    let mut perturbed_frequencies = frequencies.mapv(|f| f * (1.0 + epsilon * f.abs()));
 
     perturbed_frequencies = perturbed_frequencies
         .into_shape((3 * molecule.num_atoms,))

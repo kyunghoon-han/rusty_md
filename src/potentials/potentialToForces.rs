@@ -1,6 +1,8 @@
 use crate::Molecule;
+use rayon::prelude::*;
+use std::sync::{Arc, Mutex};
 extern crate ndarray;
-use ndarray::array;
+use ndarray::{array, Array2};
 #[path="../forces/distances.rs"] mod dist;
 pub use dist::{calculate_distance, calculate_direction};
 
@@ -37,6 +39,76 @@ pub fn calculate_potential_energy(molecule: &mut Molecule, list_potentials: Vec<
 }
 
 pub fn compute_forces(molecule: &mut Molecule, list_potentials: Vec<String>, save_to_molecule: bool) -> &mut Molecule {
+    let num_atoms = molecule.num_atoms;
+    let coordinates = molecule.coordinates.clone(); // Cloning only the coordinates instead of the whole molecule
+
+    // Calculate the small step for numerical differentiation
+    let h = 1e-10;
+
+    // Mutex for the forces
+    let forces = std::sync::Mutex::new(molecule.forces.clone());
+
+    // Compute the forces on each atom in parallel
+    (0..num_atoms).into_par_iter().for_each(|i| {
+        let mut force_i = array![0.0, 0.0, 0.0];
+
+        let energy_i = {
+            let mut molecule_i = Molecule {
+                atoms: molecule.atoms.clone(),
+                num_atoms: molecule.num_atoms,
+                coordinates: coordinates.clone(),
+                velocities: molecule.velocities.clone(),
+                connectivities: molecule.connectivities.clone(),
+                connection_lengths: molecule.connection_lengths.clone(),
+                equilibrium_valence: molecule.equilibrium_valence.clone(),
+                equilibrium_torsion: molecule.equilibrium_torsion.clone(),
+                ..Default::default()
+            };
+            molecule_i.update_atoms();
+            calculate_potential_energy(&mut molecule_i, list_potentials.clone(), save_to_molecule)
+        };
+
+        for dim in 0..3 {
+            // Perturb the coordinate of atom i in the current dimension
+            let mut perturbed_coords = coordinates.clone();
+            perturbed_coords[[i, dim]] += h;
+
+            let perturbed_energy = {
+                let mut perturbed_molecule = Molecule {
+                    atoms: molecule.atoms.clone(), // clone only necessary parts
+                    num_atoms: molecule.num_atoms,
+                    coordinates: perturbed_coords,
+                    velocities: molecule.velocities.clone(),
+                    connectivities: molecule.connectivities.clone(),
+                    connection_lengths: molecule.connection_lengths.clone(),
+                    equilibrium_valence: molecule.equilibrium_valence.clone(),
+                    equilibrium_torsion: molecule.equilibrium_torsion.clone(),
+                    ..Default::default()
+                };
+                perturbed_molecule.update_atoms();
+                calculate_potential_energy(&mut perturbed_molecule, list_potentials.clone(), save_to_molecule)
+            };
+
+            // Calculate the force using numerical differentiation (forward difference)
+            let numerical_force = (perturbed_energy - energy_i) / h;
+            force_i[dim] = -numerical_force;
+        }
+
+        let mut forces_guard = forces.lock().unwrap();
+        forces_guard.row_mut(i).assign(&force_i);
+    });
+
+    // Update the molecule's forces with the computed forces
+    if save_to_molecule {
+        molecule.forces = forces.into_inner().unwrap();
+    }
+
+    molecule
+}
+
+
+
+pub fn compute_forces_serial(molecule: &mut Molecule, list_potentials: Vec<String>, save_to_molecule: bool) -> &mut Molecule {
     let num_atoms = molecule.num_atoms;
     let coordinates = &molecule.coordinates;
 
