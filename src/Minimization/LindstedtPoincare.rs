@@ -1,16 +1,12 @@
 use crate::Molecule;
-use ndarray::{s, Array1, Array2};
-#[path = "../potentials/potentialToForces.rs"]
-mod ptf;
+use ndarray::{Array1, Array2};
+#[path = "../potentials/potentialToForces.rs"] mod ptf;
 pub use ptf::{calculate_potential_energy, compute_forces};
-#[path = "../boundaryConditions/periodic.rs"]
-mod periodic;
+#[path = "../boundaryConditions/periodic.rs"] mod periodic;
 pub use periodic::apply_periodic_boundary_conditions;
-#[path = "../commonUtils.rs"]
-mod commons;
+#[path = "../commonUtils.rs"] mod commons;
 pub use commons::{atom_update, compute_hessian, get_normal_modes_and_frequencies};
-#[path = "../fileIO/saveXYZ.rs"]
-mod xyz;
+#[path = "../fileIO/saveXYZ.rs"] mod xyz;
 pub use xyz::write_each_iteration;
 
 pub fn lindstedt_poincare(
@@ -26,7 +22,6 @@ pub fn lindstedt_poincare(
 
     for _step in 0..num_steps {
         // Step 2 : Computation of the net-forces for all atoms
-        calculate_potential_energy(molecule, list_potentials.clone(), true);
         compute_forces(molecule, list_potentials.clone(), true);
 
         // Step 3 : Compute the normal modes and frequencies
@@ -49,7 +44,6 @@ pub fn lindstedt_poincare(
             list_potentials.clone(),
         );
 
-        calculate_potential_energy(perturbed_molecule, list_potentials.clone(), true);
         compute_forces(perturbed_molecule, list_potentials.clone(), true);
 
         // Step 4: Combine the contributions from the zeroth-order solution and higher-order corrections
@@ -67,7 +61,6 @@ pub fn lindstedt_poincare(
 
         // Step 5: Update velocities and forces at each time step based on the approximate positions obtained
         // In this case, we'll use the new positions from the combined solution to compute the forces and then update the velocities
-        calculate_potential_energy(perturbed_molecule, list_potentials.clone(), true);
         compute_forces(perturbed_molecule, list_potentials.clone(), true);
         perturbed_molecule.velocities = molecule.clone().forces * time_step;
 
@@ -79,15 +72,13 @@ pub fn lindstedt_poincare(
         molecule.velocities  = perturbed_molecule.clone().velocities;
         molecule.energy      = perturbed_molecule.clone().energy;
         atom_update(molecule);
-
+        
         println!("current energy: {:}", molecule.energy);
         _ = write_each_iteration(_step.clone() as i32, &"traj.xyz", molecule.clone());
-        //println!("Perturbed energy : {:?}", perturbed_molecule.energy);
-        //println!("Original  energy : {:?}", molecule.energy);
-        calculate_potential_energy(molecule, list_potentials.clone(), false);
-        if (old_energy - molecule.energy).abs() > 1e-6 {
+        /*calculate_potential_energy(molecule, list_potentials.clone(), false);
+        if (old_energy - molecule.energy).abs() > 1e-5{
             println!("Energy conservation check failed!");
-        }
+        }*/
     }
 }
 

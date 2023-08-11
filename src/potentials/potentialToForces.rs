@@ -1,10 +1,14 @@
 use crate::Molecule;
 use rayon::prelude::*;
-use std::sync::{Arc, Mutex};
+use std::{sync::{Arc, Mutex}, clone};
 extern crate ndarray;
 use ndarray::{array, Array2};
 #[path="../forces/distances.rs"] mod dist;
-pub use dist::{calculate_distance, calculate_direction};
+pub use dist::{
+    calculate_distance,
+    calculate_direction,
+    merge_molecules
+};
 
 #[path="./harmonic.rs"] mod harmonic;
 pub use harmonic::harmonic_potential;
@@ -17,28 +21,45 @@ pub use valence::valence_angle_energy;
 
 
 pub fn calculate_potential_energy(molecule: &mut Molecule, list_potentials: Vec<String>, save_to_molecule: bool) -> f64 {
-    let mut energy = 0.0;
-    if list_potentials.contains(&"HARMONIC".to_owned()) {
-        energy += harmonic_potential(molecule, 1.0, save_to_molecule);
-    }
-    if list_potentials.contains(&"LJ".to_owned()) {
-        energy += lj_energy(molecule, 1.0, 1.0, save_to_molecule);
-    }
-    if list_potentials.contains(&"VALENCE".to_owned()) {
-        energy += valence_angle_energy(molecule, 1.0, save_to_molecule);
-    }
-    if list_potentials.contains(&"TORSIONAL".to_owned()) {
-        energy += torsional_energy(molecule, 1.0, save_to_molecule);
-    }
+    let results: Vec<(f64, Option<Molecule>)> = list_potentials.par_iter()
+        .filter_map(|potential| {
+            let mut local_molecule = molecule.clone();
+            let energy = match potential.as_str() {
+                "HARMONIC" => harmonic_potential(&mut local_molecule, 2.0, save_to_molecule),
+                "LJ" => lj_energy(&mut local_molecule, 1.0, 1.0, save_to_molecule),
+                "VALENCE" => valence_angle_energy(&mut local_molecule, 1.0, save_to_molecule),
+                "TORSIONAL" => torsional_energy(&mut local_molecule, 1.0, save_to_molecule),
+                _ => return None
+            };
+            Some((energy, if save_to_molecule { Some(local_molecule) } else { None }))
+        }).collect();
 
+    let total_energy: f64 = results.iter().map(|(energy, _)| *energy).sum();
+
+    // Merge changes back into the original molecule.
     if save_to_molecule {
-        molecule.energy = energy;
+        let mut kinetic_energy = 0.0;
+        // there's only 1 molecule to loop through in this for loop
+        for (_, maybe_molecule) in results {
+            let clone_tmp = maybe_molecule.clone().unwrap();
+            let velocities = clone_tmp.velocities.clone();
+            let kinetic_e = ((velocities * clone_tmp.velocities) * 0.5).sum();
+            if let Some(updated_molecule) = maybe_molecule {
+                merge_molecules(molecule, &updated_molecule);
+            }
+            kinetic_energy += kinetic_e;
+        }
+        molecule.energy = total_energy + kinetic_energy;
     }
 
-    energy
+    total_energy
 }
 
-pub fn compute_forces(molecule: &mut Molecule, list_potentials: Vec<String>, save_to_molecule: bool) -> &mut Molecule {
+pub fn compute_forces(
+    molecule: &mut Molecule,
+    list_potentials: Vec<String>,
+    save_to_molecule: bool
+) -> &mut Molecule {
     let num_atoms = molecule.num_atoms;
     let coordinates = molecule.coordinates.clone(); // Cloning only the coordinates instead of the whole molecule
 

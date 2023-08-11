@@ -67,3 +67,21 @@ pub fn vec_to_array2(vec: Vec<[f64; 3]>) -> Array2<f64> {
     let array_view: ArrayView2<f64> = ArrayView2::from_shape(shape, &flattened).unwrap();
     array_view.to_owned()
 }
+
+pub fn merge_molecules(dest: &mut Molecule, source: &Molecule) {
+    dest.atoms = source.atoms.clone();
+    dest.coordinates.assign(&source.coordinates);
+    dest.velocities.assign(&source.velocities);
+    dest.masses.assign(&source.masses);
+    dest.num_atoms = source.num_atoms;
+    dest.connectivities = source.connectivities.clone();
+    dest.connection_lengths = source.connection_lengths.clone();
+    dest.equilibrium_valence = source.equilibrium_valence.clone();
+    dest.equilibrium_torsion = source.equilibrium_torsion.clone();
+    dest.valence_current = source.valence_current.clone();
+    dest.torsion_current = source.torsion_current.clone();
+    dest.forces.assign(&source.forces);
+    dest.temperature = source.temperature;
+    dest.damping_coefficient = source.damping_coefficient;
+    dest.energy = source.energy;
+}
