@@ -34,7 +34,7 @@ pub fn lindstedt_poincare(
                 }
             }
         }
-        let mut perturbed_molecule = &mut molecule.clone();
+        let mut perturbed_molecule: &mut Molecule = &mut molecule.clone();
         update_verlet_with_perturbed_frequency(
             perturbed_molecule,
             time_step,
