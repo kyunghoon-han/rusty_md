@@ -1,4 +1,8 @@
-![Alt text](RuBi_logo2.png) # Project RuBi
+<p align="center">
+  <img src="RuBi_logo2.png" alt="Alt text" width="200"/>
+</p>
+
+# Project RuBi
 A simple MD computation with rust.
 This is a work in progress, and any suggestion on improvements or pull requests are welcome :)
 
